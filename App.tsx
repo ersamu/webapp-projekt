@@ -1,27 +1,38 @@
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { useEffect, useState } from 'react';
+import FlashMessage from 'react-native-flash-message';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Ionicons } from '@expo/vector-icons';
-import { useState } from 'react';
 
-import Train from './components/Train';
+import Auth from './components/Auth';
+import Favorites from './components/Favorites';
 import Start from './components/Start';
+import TrainMap from './components/TrainMap';
+import authModel from './models/auth';
+import { Base } from './styles/index.js';
 
 const routeIcons = {
   "Start": "home",
-  "Förseningar": "train",
-  "Karta": "location",
+  "Förseningar": "train-outline",
+  "Logga in": "lock-closed",
+  "Favoriter": "star-outline",
 };
 
 const Tab = createBottomTabNavigator();
 
 export default function App() {
-  const [delays, setDelays] = useState([]);
+  const [isLoggedIn, setIsLoggedIn] = useState<Boolean>(false);
+
+  useEffect(() => {
+    (async () => {
+        setIsLoggedIn(await authModel.loggedIn());
+    })();
+  }, []);
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={Base.container}>
       <NavigationContainer>
         <Tab.Navigator screenOptions={({ route }) => ({
             tabBarIcon: ({ color, size }) => {
@@ -34,29 +45,19 @@ export default function App() {
           })}
         >
           <Tab.Screen name="Start" component={Start} />
-          <Tab.Screen name="Förseningar" component={Train} />
+          <Tab.Screen name="Förseningar" component={TrainMap} />
+          {isLoggedIn ?
+            <Tab.Screen name="Favoriter">
+              {() => <Favorites setIsLoggedIn={setIsLoggedIn}/>}
+            </Tab.Screen> :
+            <Tab.Screen name="Logga in">
+              {() => <Auth setIsLoggedIn={setIsLoggedIn}/>}
+            </Tab.Screen>
+          }
         </Tab.Navigator>
       </NavigationContainer>
       <StatusBar style="auto" />
+      <FlashMessage position="top" />
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-
-  startImg: {
-    flex: 1,
-    justifyContent: 'center',
-  },
-
-  textOverImg: {
-    fontSize: 42,
-    color: 'white',
-    marginTop: 200,
-    paddingLeft: 50,
-    paddingRight: 50,
-  },
-});
